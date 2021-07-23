@@ -1,5 +1,14 @@
-import time, re, requests
+import time, re, requests, json
 requests.packages.urllib3.disable_warnings()
+
+'''
+读取配置文件
+'''
+def getconfig(conf:str):
+    with open(conf, "r+", encoding='utf-8_sig') as f:
+        config = json.load(f)
+
+    return config
 
 '''
 下载网页并筛选出目标链接
@@ -44,21 +53,25 @@ def urltopdf(urls:list):
 
 '''
 选择是否过滤url，比如从数据库中比对是否已经发送过，
-如发送过，则remove
+如发送过，则remove，考虑下列封装成class
 '''
+URLPOOL=[]  #已经发送的url池
+
 def filterUrls(urls: list):
+    urlret=[]
     for url in urls:
-        #此处判断是否需要过滤
-        ret = False
-        if ret:
-            urls.remove(url)
+        #此处判断是否需要过
+        if url not in URLPOOL:
+            urlret.append(url)
+            URLPOOL.append(url)
 
-    return urls
+    return urlret
+
 
 '''
-发送邮件
+发送邮件  考虑封装成class
 '''
-def sendmail(Subject:str, files:list):
+def sendmail(Subject:str, files:list, config):
     import smtplib
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
@@ -66,14 +79,22 @@ def sendmail(Subject:str, files:list):
 
     HOST = 'smtp.qq.com'
     PORT = '465'
-    FROM = '1451762067@qq.com'
+    FROM = config['config']['mailuser']
+    USER = config['config']['mailuser']
+    TOs = config['config']['mails']
+    PWD = config['config']['mailpwd']
     # 邮件列表，需要订阅的话往列表添加邮箱即可
-    TOs = ['1451762067@qq.com', ]
 
     #如果使用第三方客户端登录，要求使用授权码，不能使用真实密码，防止密码泄露。
-    smtp_obj = smtplib.SMTP_SSL(host=HOST).connect(host=HOST, port=PORT)
-    res = smtp_obj.login(user=FROM, password='')
-    print('登录邮箱stmp.qq.com:', res)
+    smtp_obj = smtplib.SMTP_SSL(host=HOST, port=PORT)
+    # smtp_obj = smtp_obj.connect(host=HOST, port=PORT)
+    res = smtp_obj.login(user=USER, password=PWD)
+
+    if res[0] != 235:
+        print('->登录邮箱stmp.qq.com 失败')
+        return
+    else:
+        print('->登录邮箱stmp.qq.com成功:', res)
 
     #准备附件
     message = MIMEMultipart()
@@ -87,29 +108,42 @@ def sendmail(Subject:str, files:list):
         att1["Content-Type"] = 'application/octet-stream'
         att1["Content-Disposition"] = 'attachment; filename="{file}"'.format(file=file)
         message.attach(att1)
-        print('发送邮件附件:', file)
+        print('->发送邮件附件:', file)
         Content = Content + '附件' + str(cnt) + ': ' + file + '\n'
         cnt = cnt + 1
-        time.sleep(1)
+        # time.sleep(1)
 
     #正文信息
     body = MIMEText(Content)
     message.attach(body)
 
     #分发
-    for to in TOs:
+    try:
+        message['To'] = Header(','.join(TOs), 'utf-8')
+        smtp_obj.sendmail(from_addr=FROM, to_addrs=TOs, msg=message.as_string())
+    except Exception as e:
+        print(e)
+    else:
+        print('->发送附件至%s完成, 附件数:%d' % (TOs, len(files)))
+
+
+if __name__ == '__main__':
+    while True:
         try:
-            message['To'] = Header(to, 'utf-8')
-            smtp_obj.sendmail(from_addr=FROM, to_addrs=[to], msg=message.as_string())
+            config = getconfig('stategov.config')
+            url = 'https://www.state.gov/countries-areas-archive/china/'
+            urls = geturls(url)
+            urls = filterUrls(urls)
+            if len(urls) > 0:
+                files = urltopdf(urls)
+                sendmail('state.gov邮件订阅!', files, config)
+            else:
+                print('->无新订阅，不发送')
         except Exception as e:
             print(e)
         else:
-            print('->发送附件至%s完成, 附件数:%d' % (to, len(files)))
-
-if __name__ == '__main__':
-    url = 'https://www.state.gov/countries-areas-archive/china/'
-    urls = geturls(url)
-    urls = filterUrls(urls)
-    files = urltopdf(urls)
-    sendmail('state.gov邮件订阅!', files)
-    print('->此次订阅结束.')
+            print('->此次订阅结束.')
+        finally:
+            time.sleep(config['config']['sleep'])
+    pass
+    pass
