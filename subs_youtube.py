@@ -4,6 +4,14 @@ from subs_utils import getconfig, sendmail, deleltefiles
 requests.packages.urllib3.disable_warnings()
 
 '''
+此文件除了依赖上面的import包外，还需要安装音视频转换工具,ffmpeg，
+下载地址：https://www.gyan.dev/ffmpeg/builds/ windows server2007上工作良好
+安装好之后将几个exe文件拷贝至系统目录即可，或者设置PATH
+Python使用os.system调用该命令进行格式转换
+或者搜索'ffmpeg windows'
+'''
+
+'''
 下载mp3音频
 '''
 def urltomp3(urls:list):
