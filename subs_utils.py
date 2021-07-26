@@ -1,10 +1,9 @@
-import time, re, requests, json, os
+import  json, os
 
 '''
 读取配置文件
 '''
 def getconfig(conf:str):
-    import json
     with open(conf, "r+", encoding='utf-8_sig') as f:
         config = json.load(f)
 
@@ -78,7 +77,6 @@ def sendmail(Subject:str, files:list, config, content=''):
     print('->发送附件至%s完成, 附件数:%d' % (TOs, len(files)))
 
 class datapool():
-    import json
     def __init__(self, datafile:str):
         self.datafile = datafile
         self.data=[]
