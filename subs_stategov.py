@@ -43,21 +43,24 @@ def urltopdf(urls:list):
             print('下载并转换完成')
     return files
 
-urlp = datapool('stategov.json')
-urlp.load()
-startup=True
-def sub_stategov():
-    config = getconfig('stategov.config')
-    url = 'https://www.state.gov/countries-areas-archive/china/'
-    urls = geturls(url)
-    urls = urlp.filter(urls)
-    global startup
-    if len(urls) > 0 and ( startup == False):
-        files = urltopdf(urls)
-        sendmail('state.gov邮件订阅!', files, config)
-        deleltefiles(files)
-        urlp.dump()
-    else:
-        print('->stategov无新订阅，不发送\n\n\n')
+class subs_stategov():
+    def __init__(self, cfgfile, jsonfile):
+        self.urlp = datapool(jsonfile)
+        self.urlp.load()
+        self.cfgfile = cfgfile
+        self.startup = True
 
-    startup = False
+    def subs(self):
+        config = getconfig(self.cfgfile)
+        url = 'https://www.state.gov/countries-areas-archive/china/'
+        urls = geturls(url)
+        urls = self.urlp.filter(urls)
+        if len(urls) > 0 and (self.startup == False):
+            files = urltopdf(urls)
+            sendmail('state.gov邮件订阅!', files, config)
+            deleltefiles(files)
+            self.urlp.dump()
+        else:
+            print('->stategov无新订阅，不发送\n\n\n')
+
+        self.startup = False

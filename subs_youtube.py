@@ -78,29 +78,30 @@ def geturls(urls:list):
     req.close()
     return returls
 
-urlp = datapool('youtube.json')
-urlp.load()
-startup = True
-def subs_youtube():
-# if __name__ == '__main__':
-    global startup
-    config = getconfig('subs_youtube.config')
-    urls= config['config']['urls']
-    urls = geturls(urls)
-    urls = urlp.filter(urls)
-    if len(urls) > 0 and (startup == False):
-        files = urltomp3(urls)
-        content =''; cnt = 1;
-        for url in urls:
-            content = content + '【{cnt}】'.format(cnt=cnt) + url[0] + ' ' + url[1] + '\n'
-            cnt = cnt + 1
-        sendmail('YouTube订阅！', files, config, content)
-        deleltefiles(files)
-        urlp.dump()
-    else:
-        print('->油管无新订阅，不发送！\n\n\n')
+class subs_youtube():
+    def __init__(self, cfgfile, jsonfile):
+        self.urlp = datapool(jsonfile)
+        self.urlp.load()
+        self.cfgfile = cfgfile
+        self.startup =  True
 
-    startup = False
+    def subs(self):
+        config = getconfig(self.cfgfile)
+        urls = config['config']['urls']
+        urls = geturls(urls)
+        urls = self.urlp.filter(urls)
+        if len(urls) > 0 and (self.startup == False):
+            files = urltomp3(urls)
+            content = ''; cnt = 1
+            for url in urls:
+                content = content + '【{cnt}】'.format(cnt=cnt) + url[0] + ' ' + url[1] + '\n'
+                cnt = cnt + 1
+            sendmail('YouTube订阅！', files, config, content)
+            deleltefiles(files)
+            self.urlp.dump()
+        else:
+            print('->油管无新订阅，不发送！\n\n\n')
+        self.startup = False
 
 
 

@@ -46,43 +46,25 @@ def urltopdf(urls:list):
             print('下载并转换完成')
     return files
 
-urlp = datapool('cnn.json')
-urlp.load()
-startup=True
-def sub_cnn():
-    global startup
-    config = getconfig('cnn.config')
-    url = 'https://edition.cnn.com/'
-    urls = geturls(url, config['config']['keyword'])
-    urls = urlp.filter(urls)
-    if len(urls) > 0 and ( startup == False):
-        files = urltopdf(urls)
-        sendmail('cnn.com邮件订阅!', files, config)
-        deleltefiles(files)
-        urlp.dump()
-    else:
-        print('->cnn无新订阅，不发送\n\n\n')
-    startup = False
+class subs_cnn():
+    def __init__(self, cfgfile, jsonfile):
+        self.urlp = datapool(jsonfile)
+        self.urlp.load()
+        self.cfgfile = cfgfile
+        self.startup = True
 
-# if __name__ == '__main__':
-#
-#     while True:
-#         try:
-#             config = getconfig('cnn.config')
-#             url = 'https://edition.cnn.com/'
-#             urls = geturls(url)
-#             urls = filterUrls(urls)
-#             if len(urls) > 0:
-#                 files = urltopdf(urls)
-#                 sendmail('cnn.com邮件订阅!', files, config)
-#                 deleltefiles(files)
-#             else:
-#                 print('->无新订阅，不发送')
-#         except Exception as e:
-#             print(e)
-#         else:
-#             print('->此次订阅结束.')
-#         finally:
-#             time.sleep(config['config']['sleep'])
-#     pass
-#     pass
+    def subs(self):
+        global startup
+        config = getconfig(self.cfgfile)
+        url = 'https://edition.cnn.com/'
+        urls = geturls(url, config['config']['keyword'])
+        urls = self.urlp.filter(urls)
+        if len(urls) > 0 and (self.startup == False):
+            files = urltopdf(urls)
+            sendmail('cnn.com邮件订阅!', files, config)
+            deleltefiles(files)
+
+        else:
+            print('->cnn无新订阅，不发送\n\n\n')
+        self.startup = False
+        self.urlp.dump()
