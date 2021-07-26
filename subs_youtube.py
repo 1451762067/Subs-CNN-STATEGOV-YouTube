@@ -71,8 +71,7 @@ def geturls(urls:list):
                                         ['contents'][0]['gridRenderer']['items']
             for v in videos:
                 if 'gridVideoRenderer' in v.keys():
-                    tup= (v['gridVideoRenderer']['title']['runs'][0]['text'],
-                          'https://www.youtube.com/watch?v='+ v['gridVideoRenderer']['videoId'])
+                    tup= [v['gridVideoRenderer']['title']['runs'][0]['text'], 'https://www.youtube.com/watch?v='+ v['gridVideoRenderer']['videoId']]
                     returls.append(tup)
                     print(tup)
     req.close()
