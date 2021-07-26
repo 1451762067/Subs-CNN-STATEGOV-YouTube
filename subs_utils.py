@@ -73,10 +73,44 @@ def sendmail(Subject:str, files:list, config, content=''):
     message.attach(content)
 
     #分发
-    try:
-        message['To'] = Header(','.join(TOs), 'utf-8')
-        smtp_obj.sendmail(from_addr=FROM, to_addrs=TOs, msg=message.as_string())
-    except Exception as e:
-        print(e)
-    else:
-        print('->发送附件至%s完成, 附件数:%d' % (TOs, len(files)))
+    message['To'] = Header(','.join(TOs), 'utf-8')
+    smtp_obj.sendmail(from_addr=FROM, to_addrs=TOs, msg=message.as_string())
+    print('->发送附件至%s完成, 附件数:%d' % (TOs, len(files)))
+
+class datapool():
+    import json
+    def __init__(self, datafile:str):
+        self.datafile = datafile
+        self.data=[]
+
+    def load(self, datafile=''):
+        if len(datafile) == 0:
+            file = self.datafile
+        else:
+            file = datafile
+
+        try:
+            with open(file, "r+", encoding='utf-8_sig') as f:
+                self.data = json.load(f)
+        except Exception as e:
+            pass
+
+    def dump(self, datafile=''):
+        if len(datafile) == 0:
+            file = self.datafile
+        else:
+            file = datafile
+        with open(file, "w+", encoding='utf-8_sig') as f:
+            json.dump(self.data, f, sort_keys=True, indent=2, ensure_ascii=False)
+
+    def filter(self, data:list):
+        datar = []
+        for d in data:
+            if d not in self.data:
+                datar.append(d)
+                self.data.append(d)
+
+        return datar
+
+    def __repr__(self):
+        return str(self.data)

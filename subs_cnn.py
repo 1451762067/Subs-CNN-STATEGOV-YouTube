@@ -1,5 +1,7 @@
 import json, re, requests, time
-from subs_utils import getconfig, sendmail, deleltefiles
+import os
+
+from subs_utils import getconfig, sendmail, deleltefiles, datapool
 requests.packages.urllib3.disable_warnings()
 
 '''
@@ -27,22 +29,6 @@ def geturls(url: str, keyword: list):
     return urls
 
 '''
-选择是否过滤url，比如从数据库中比对是否已经发送过，
-如发送过，则remove，考虑下列封装成class
-'''
-URLPOOL=[]  #已经发送的url池
-
-def filterUrls(urls: list):
-    urlret=[]
-    for url in urls:
-        #此处判断是否需要过
-        if url not in URLPOOL:
-            urlret.append(url)
-            URLPOOL.append(url)
-
-    return urlret
-
-'''
 网页转pdf
 '''
 def urltopdf(urls:list):
@@ -60,22 +46,22 @@ def urltopdf(urls:list):
             print('下载并转换完成')
     return files
 
-
+urlp = datapool('cnn.json')
+urlp.load()
 startup=True
 def sub_cnn():
+    global startup
     config = getconfig('cnn.config')
     url = 'https://edition.cnn.com/'
     urls = geturls(url, config['config']['keyword'])
-    urls = filterUrls(urls)
-
-    global startup
+    urls = urlp.filter(urls)
     if len(urls) > 0 and ( startup == False):
         files = urltopdf(urls)
         sendmail('cnn.com邮件订阅!', files, config)
         deleltefiles(files)
+        urlp.dump()
     else:
         print('->cnn无新订阅，不发送\n\n\n')
-
     startup = False
 
 # if __name__ == '__main__':
