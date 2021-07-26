@@ -1,23 +1,17 @@
-import json, re, requests
-import time
-
-from   subs_stategov import sendmail, getconfig
+import json, re, requests, time
+from subs_utils import getconfig, sendmail, deleltefiles
 requests.packages.urllib3.disable_warnings()
 
-config =''
 '''
 获取网页里的连接
 '''
-keyword=['china']
-
-def geturls(url: str):
+def geturls(url: str, keyword: list):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                 'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.164 Safari/537.36'}
 
     req = requests.Session()
     resp = req.get(url, verify=False, headers=headers)
     print('->从 %s 下载网页' % (url))
-
     res = re.search('\{"articleList":\[\{.*\}\]\}', resp.text)
     js= json.loads(res.group())
     urls=[]
@@ -28,7 +22,6 @@ def geturls(url: str):
             if item['uri'].lower().find(word) > -1:
                 urls.append('https://edition.cnn.com' + item['uri'])
                 print('https://edition.cnn.com' + item['uri'])
-                # return urls
                 continue
 
     return urls
@@ -67,26 +60,43 @@ def urltopdf(urls:list):
             print('下载并转换完成')
     return files
 
-if __name__ == '__main__':
 
-    while True:
-        try:
-            config = getconfig('cnn.config')
-            url = 'https://edition.cnn.com/'
-            urls = geturls(url)
-            urls = filterUrls(urls)
+startup=True
+def sub_cnn():
+    config = getconfig('cnn.config')
+    url = 'https://edition.cnn.com/'
+    urls = geturls(url, config['config']['keyword'])
+    urls = filterUrls(urls)
 
-            if len(urls) > 0:
-                pass
-                # files = urltopdf(urls)
-                # sendmail('cnn.com邮件订阅!', files, config)
-            else:
-                print('->无新订阅，不发送')
-        except Exception as e:
-            print(e)
-        else:
-            print('->此次订阅结束.')
-        finally:
-            time.sleep(config['config']['sleep'])
-    pass
-    pass
+    global startup
+    if len(urls) > 0 and ( startup == False):
+        files = urltopdf(urls)
+        sendmail('cnn.com邮件订阅!', files, config)
+        deleltefiles(files)
+    else:
+        print('->cnn无新订阅，不发送\n\n\n')
+
+    startup = False
+
+# if __name__ == '__main__':
+#
+#     while True:
+#         try:
+#             config = getconfig('cnn.config')
+#             url = 'https://edition.cnn.com/'
+#             urls = geturls(url)
+#             urls = filterUrls(urls)
+#             if len(urls) > 0:
+#                 files = urltopdf(urls)
+#                 sendmail('cnn.com邮件订阅!', files, config)
+#                 deleltefiles(files)
+#             else:
+#                 print('->无新订阅，不发送')
+#         except Exception as e:
+#             print(e)
+#         else:
+#             print('->此次订阅结束.')
+#         finally:
+#             time.sleep(config['config']['sleep'])
+#     pass
+#     pass

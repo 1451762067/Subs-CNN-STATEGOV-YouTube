@@ -1,20 +1,12 @@
-import time, re, requests, json
+import time, re, requests, json, os
+from subs_utils import  getconfig, deleltefiles, sendmail
 requests.packages.urllib3.disable_warnings()
-
-'''
-读取配置文件
-'''
-def getconfig(conf:str):
-    with open(conf, "r+", encoding='utf-8_sig') as f:
-        config = json.load(f)
-
-    return config
 
 '''
 下载网页并筛选出目标链接
 '''
 def geturls(url:str):
-    # proxie={
+    # proxies={
     #     "http":"http://127.0.0.1:7070",
     #     "https":"http://127.0.0.1:7070",
     # }
@@ -56,7 +48,6 @@ def urltopdf(urls:list):
 如发送过，则remove，考虑下列封装成class
 '''
 URLPOOL=[]  #已经发送的url池
-
 def filterUrls(urls: list):
     urlret=[]
     for url in urls:
@@ -67,83 +58,40 @@ def filterUrls(urls: list):
 
     return urlret
 
+startup=True
+def sub_stategov():
+    config = getconfig('stategov.config')
+    url = 'https://www.state.gov/countries-areas-archive/china/'
+    urls = geturls(url)
+    urls = filterUrls(urls)
 
-'''
-发送邮件  考虑封装成class
-'''
-def sendmail(Subject:str, files:list, config):
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
-    from email.header import Header
-
-    HOST = 'smtp.qq.com'
-    PORT = '465'
-    FROM = config['config']['mailuser']
-    USER = config['config']['mailuser']
-    TOs = config['config']['mails']
-    PWD = config['config']['mailpwd']
-    # 邮件列表，需要订阅的话往列表添加邮箱即可
-
-    #如果使用第三方客户端登录，要求使用授权码，不能使用真实密码，防止密码泄露。
-    smtp_obj = smtplib.SMTP_SSL(host=HOST, port=PORT)
-    # smtp_obj = smtp_obj.connect(host=HOST, port=PORT)
-    res = smtp_obj.login(user=USER, password=PWD)
-
-    if res[0] != 235:
-        print('->登录邮箱stmp.qq.com 失败')
-        return
+    global startup
+    if len(urls) > 0 and ( startup == False):
+        files = urltopdf(urls)
+        sendmail('state.gov邮件订阅!', files, config)
+        deleltefiles(files)
     else:
-        print('->登录邮箱stmp.qq.com成功:', res)
+        print('->stategov无新订阅，不发送\n\n\n')
 
-    #准备附件
-    message = MIMEMultipart()
-    message['From'] = Header(FROM, 'utf-8')
-    message['Subject'] = Header(Subject, 'utf-8')
-
-    Content=''; cnt=1
-    for file in files:
-        #发送带附件的邮件
-        att1 = MIMEText(open(file, 'rb').read(), 'base64', 'utf-8')
-        att1["Content-Type"] = 'application/octet-stream'
-        att1["Content-Disposition"] = 'attachment; filename="{file}"'.format(file=file)
-        message.attach(att1)
-        print('->发送邮件附件:', file)
-        Content = Content + '附件' + str(cnt) + ': ' + file + '\n'
-        cnt = cnt + 1
-        # time.sleep(1)
-
-    #正文信息
-    body = MIMEText(Content)
-    message.attach(body)
-
-    #分发
-    try:
-        message['To'] = Header(','.join(TOs), 'utf-8')
-        smtp_obj.sendmail(from_addr=FROM, to_addrs=TOs, msg=message.as_string())
-    except Exception as e:
-        print(e)
-    else:
-        print('->发送附件至%s完成, 附件数:%d' % (TOs, len(files)))
-
-
-if __name__ == '__main__':
-    while True:
-        try:
-            config = getconfig('stategov.config')
-            url = 'https://www.state.gov/countries-areas-archive/china/'
-            urls = geturls(url)
-            urls = filterUrls(urls)
-            if len(urls) > 0:
-                files = urltopdf(urls)
-                sendmail('state.gov邮件订阅!', files, config)
-            else:
-                print('->无新订阅，不发送')
-        except Exception as e:
-            print(e)
-        else:
-            print('->此次订阅结束.')
-        finally:
-            time.sleep(config['config']['sleep'])
-    pass
-    pass
+    startup = False
+# if __name__ == '__main__':
+#     while True:
+#         try:
+#             config = getconfig('stategov.config')
+#             url = 'https://www.state.gov/countries-areas-archive/china/'
+#             urls = geturls(url)
+#             urls = filterUrls(urls)
+#             if len(urls) > 0:
+#                 files = urltopdf(urls)
+#                 sendmail('state.gov邮件订阅!', files, config)
+#                 deleltefiles(files)
+#             else:
+#                 print('->无新订阅，不发送')
+#         except Exception as e:
+#             print(e)
+#         else:
+#             print('->此次订阅结束.')
+#         finally:
+#             time.sleep(config['config']['sleep'])
+#     pass
+#     pass
