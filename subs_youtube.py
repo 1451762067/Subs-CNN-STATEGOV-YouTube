@@ -80,7 +80,6 @@ def geturls(urls:list):
             continue
 
         if resp.ok:
-            print('ok')
             res = re.findall(r'(\{\"responseContext\".+?\}\]\}\}\});</script>', resp.text)
             videos =  json.loads(res[0])['contents']['twoColumnBrowseResultsRenderer']['tabs'][1]['tabRenderer']\
                                         ['content']['sectionListRenderer']['contents'][0]['itemSectionRenderer']\
