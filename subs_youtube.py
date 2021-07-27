@@ -36,7 +36,6 @@ def urltomp3(urls:list):
             logging.error(e); print(e)
             continue
         else:
-            # url.append(filename + '.mp3')
             files.append([url[0], url[1], filename + '.mp3'])
 
         #增加间隔时间，防止过频访问
