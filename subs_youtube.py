@@ -1,4 +1,5 @@
-import json, re, sys, requests, youtube_dl, logging
+from __future__ import unicode_literals
+import json, re, sys, uuid, requests, youtube_dl, logging
 import time
 
 from subs_utils import getconfig, sendmail, deleltefiles, datapool
@@ -19,28 +20,38 @@ def urltomp3(urls:list):
     files = []
     fails = []
     for url in urls:
-        # url=(title, link)
+        # url=[title, link]
         # 替换其中不规范字符
-        # filename = re.sub(r'[\\\/\:\*\?\"\<\>\|？“”：]', '_', url[0], count=0, flags=0)
+        # if url[0].find(r'#') > -1:
+        #     filename = uuid.uuid4()
+        # else:
+        #     filename = re.sub(r'[\\\/\:\*\"\<\>\|“”： #（）()]', '_', url[0], count=0, flags=0)
+        # print(filename, url[0])
         # filename = url[0]
-        ydl_opts = {
+        print('->下载 ', url[0])
+        filename = str(uuid.uuid4())[0:8]   #经充分测试，如果保留原视频title明，那下载下来的文件名可能包含特殊字符，有可能导致邮件附件发送失败
+        ydl_opts = {                        #替换掉特殊字符也一样，原因未知，因此通过生成uid做文件名
             'format': 'worstaudio/worst',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
                 'preferredquality': '64',
             }],
-            'outtmpl':  url[0] + '.m4a'
+            'outtmpl':  filename + '.m4a'
         }
         try:
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                # info_dict = ydl.extract_info(url[1], download=False)
+                # video_title = info_dict.get('title', None)
+                # print(video_title)
                 ydl.download([url[1]])
         except Exception as e:
             fails.append(url)
             logging.error(e); print(e)
             continue
         else:
-            files.append(url[0] + '.mp3')
+            # url.append(filename + '.mp3')
+            files.append([url[0], url[1], filename + '.mp3'])
 
         time.sleep(10)  #增加间隔时间，防止过频访问
 
@@ -92,31 +103,34 @@ class subs_youtube():
 
     def subs(self):
         config = getconfig(self.cfgfile)
-        urls = config['config']['urls']
-        urls = geturls(urls)
+        urls = geturls(config['config']['urls'])
         urls = self.urlp.filter(urls)
         if len(urls) > 0 and (self.startup == False):
-            files, fails = urltomp3(urls)   
+            files, fails = urltomp3(urls)
             self.urlp.remove(fails)
-            for file in files:   #为防止附件过大，mp3邮件单个发送
-                # content = ''; cnt = 1
-                for url in urls:
-                    if file[:-4] == url[0]:
-                        content = '【1】'+ url[0] + ' ' + url[1] + '\n'
-                        break
-                        # cnt = cnt + 1
-                sendmail('YouTube订阅！', [file], config, content)
-
-            deleltefiles(files)
-            self.urlp.dump()
+            for file in files:   #为防止附件过大，mp3邮件单个发送  file=[tilte, link, videoname]
+                content = '【1】'+ file[0] + ' ' + file[1] + '\n'
+                sendmail('YouTube订阅！', [file[2]], config, content)
+                deleltefiles([file[2]])
         else:
             print('->油管无新订阅，不发送！\n\n\n')
         self.urlp.dump()
         self.startup = False
 
 if __name__ == '__main__':
-    zzh_subs_youtube = subs_youtube('subs_youtube.config', 'subs_youtube.json')
-    zzh_subs_youtube.subs()
+    pass
+    # pool = datapool('1.json')
+    # pool.load()
+    # print(pool)
+    # pool.remove([[3,4]])
+    # print(pool)
+    # pool.filter([[9,10]])
+    # print(pool)
+    # pool.dump()
+
+
+    # zzh_subs_youtube = subs_youtube('subs_youtube.config', 'subs_youtube.json')
+    # zzh_subs_youtube.subs()
 
 
 
