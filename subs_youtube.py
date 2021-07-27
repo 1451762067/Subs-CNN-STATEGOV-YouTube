@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import json, re, sys, requests, youtube_dl, logging
 import time
 
@@ -97,14 +96,8 @@ class subs_youtube():
         urls = geturls(urls)
         urls = self.urlp.filter(urls)
         if len(urls) > 0 and (self.startup == False):
-            files, fails = urltomp3(urls)
-            print(files)
-            print(fails)
-            logging.error('before')
-            logging.error(str(self.urlp))
+            files, fails = urltomp3(urls)   
             self.urlp.remove(fails)
-            logging.error('after')
-            logging.error(str(self.urlp))
             for file in files:   #为防止附件过大，mp3邮件单个发送
                 # content = ''; cnt = 1
                 for url in urls:
@@ -115,7 +108,6 @@ class subs_youtube():
                 sendmail('YouTube订阅！', [file], config, content)
 
             deleltefiles(files)
-            logging.error(str(self.urlp))
             self.urlp.dump()
         else:
             print('->油管无新订阅，不发送！\n\n\n')
