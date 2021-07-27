@@ -19,14 +19,6 @@ def urltomp3(urls:list):
     files = []
     fails = []
     for url in urls:
-        # url=[title, link]
-        # 替换其中不规范字符
-        # if url[0].find(r'#') > -1:
-        #     filename = uuid.uuid4()
-        # else:
-        #     filename = re.sub(r'[\\\/\:\*\"\<\>\|“”： #（）()]', '_', url[0], count=0, flags=0)
-        # print(filename, url[0])
-        # filename = url[0]
         print('->下载 ', url[0])
         filename = str(uuid.uuid4())[0:8]   #经充分测试，如果保留原视频title明，那下载下来的文件名可能包含特殊字符，有可能导致邮件附件发送失败
         ydl_opts = {                        #替换掉特殊字符也一样，原因未知，因此通过生成uid做文件名
@@ -40,9 +32,6 @@ def urltomp3(urls:list):
         }
         try:
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                # info_dict = ydl.extract_info(url[1], download=False)
-                # video_title = info_dict.get('title', None)
-                # print(video_title)
                 ydl.download([url[1]])
         except Exception as e:
             fails.append(url)
@@ -52,8 +41,9 @@ def urltomp3(urls:list):
             # url.append(filename + '.mp3')
             files.append([url[0], url[1], filename + '.mp3'])
 
-        time.sleep(10)  #增加间隔时间，防止过频访问
-
+        #增加间隔时间，防止过频访问
+        time.sleep(10)  
+        
     return files, fails
 
 '''
@@ -116,19 +106,11 @@ class subs_youtube():
         self.startup = False
 
 if __name__ == '__main__':
-    pass
-    # pool = datapool('1.json')
-    # pool.load()
-    # print(pool)
-    # pool.remove([[3,4]])
-    # print(pool)
-    # pool.filter([[9,10]])
-    # print(pool)
-    # pool.dump()
+    zzh_subs_youtube = subs_youtube('subs_youtube.config', 'subs_youtube.json')
+    zzh_subs_youtube.subs()
 
 
-    # zzh_subs_youtube = subs_youtube('subs_youtube.config', 'subs_youtube.json')
-    # zzh_subs_youtube.subs()
+   
 
 
 
