@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import json, re, sys, uuid, requests, youtube_dl, logging
 import time
 
