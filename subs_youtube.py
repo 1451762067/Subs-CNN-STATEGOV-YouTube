@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
-import json, re, sys, requests, youtube_dl
+import json, re, sys, requests, youtube_dl, logging
+import time
+
 from subs_utils import getconfig, sendmail, deleltefiles, datapool
 requests.packages.urllib3.disable_warnings()
 
@@ -15,7 +17,8 @@ Python使用os.system调用该命令进行格式转换
 下载mp3音频
 '''
 def urltomp3(urls:list):
-    files= []
+    files = []
+    fails = []
     for url in urls:
         # url=(title, link)
         # 替换其中不规范字符
@@ -34,12 +37,15 @@ def urltomp3(urls:list):
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url[1]])
         except Exception as e:
-            print(e)
+            fails.append(url)
+            logging.error(e); print(e)
             continue
         else:
             files.append(url[0] + '.mp3')
 
-    return files
+        time.sleep(10)  #增加间隔时间，防止过频访问
+
+    return files, fails
 
 '''
 下载urls
@@ -60,7 +66,7 @@ def geturls(urls:list):
             # resp = req.get(url, verify=False, headers=headers, proxies=proxies)
             resp = req.get(url, verify=False, headers=headers)
         except Exception as e:
-            print(e)
+            logging.error(e); print(e)
             continue
 
         if resp.ok:
@@ -71,9 +77,10 @@ def geturls(urls:list):
                                         ['contents'][0]['gridRenderer']['items']
             for v in videos:
                 if 'gridVideoRenderer' in v.keys():
-                    tup= [v['gridVideoRenderer']['title']['runs'][0]['text'], 'https://www.youtube.com/watch?v='+ v['gridVideoRenderer']['videoId']]
+                    tup= [v['gridVideoRenderer']['title']['runs'][0]['text'],
+                          'https://www.youtube.com/watch?v='+ v['gridVideoRenderer']['videoId']]
                     returls.append(tup)
-                    print(tup)
+                    # print(tup)
     req.close()
     return returls
 
@@ -82,7 +89,7 @@ class subs_youtube():
         self.urlp = datapool(jsonfile)
         self.urlp.load()
         self.cfgfile = cfgfile
-        self.startup =  True
+        self.startup = False
 
     def subs(self):
         config = getconfig(self.cfgfile)
@@ -90,17 +97,34 @@ class subs_youtube():
         urls = geturls(urls)
         urls = self.urlp.filter(urls)
         if len(urls) > 0 and (self.startup == False):
-            files = urltomp3(urls)
-            content = ''; cnt = 1
-            for url in urls:
-                content = content + '【{cnt}】'.format(cnt=cnt) + url[0] + ' ' + url[1] + '\n'
-                cnt = cnt + 1
-            sendmail('YouTube订阅！', files, config, content)
+            files, fails = urltomp3(urls)
+            print(files)
+            print(fails)
+            logging.error('before')
+            logging.error(str(self.urlp))
+            self.urlp.remove(fails)
+            logging.error('after')
+            logging.error(str(self.urlp))
+            for file in files:   #为防止附件过大，mp3邮件单个发送
+                # content = ''; cnt = 1
+                for url in urls:
+                    if file[:-4] == url[0]:
+                        content = '【1】'+ url[0] + ' ' + url[1] + '\n'
+                        break
+                        # cnt = cnt + 1
+                sendmail('YouTube订阅！', [file], config, content)
+
             deleltefiles(files)
+            logging.error(str(self.urlp))
             self.urlp.dump()
         else:
             print('->油管无新订阅，不发送！\n\n\n')
+        self.urlp.dump()
         self.startup = False
+
+if __name__ == '__main__':
+    zzh_subs_youtube = subs_youtube('subs_youtube.config', 'subs_youtube.json')
+    zzh_subs_youtube.subs()
 
 
 

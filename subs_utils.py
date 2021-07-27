@@ -1,4 +1,5 @@
-import  json, os
+import logging
+import  os, json
 
 '''
 读取配置文件
@@ -14,13 +15,12 @@ def getconfig(conf:str):
 删除文件
 '''
 def deleltefiles(files: list):
-    try:
-        for file in files:
+    for file in files:
+        try:
             print('删除文件:', file)
             os.remove(file)
-    except Exception:
-        pass
-
+        except Exception as e:
+            pass
 
 '''
 发送邮件  考虑封装成class
@@ -103,13 +103,19 @@ class datapool():
 
     def filter(self, data:list):
         datar = []
-        olddata=self.data[:]
+        olddata = self.data[:]
         for d in data:
             if d not in olddata:
                 datar.append(d)
                 self.data.append(d)
 
         return datar
+
+    def remove(self, data:list):
+        olddata = self.data[:]
+        for d in data:
+            if d in olddata:
+                self.data.remove(d)
 
     def __repr__(self):
         return str(self.data)
