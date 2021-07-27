@@ -1,6 +1,4 @@
-import json, re, sys, uuid, requests, youtube_dl, logging
-import time
-
+import json, re, sys, uuid, requests, youtube_dl, logging, time
 from subs_utils import getconfig, sendmail, deleltefiles, datapool
 requests.packages.urllib3.disable_warnings()
 
