@@ -103,18 +103,16 @@ class datapool():
 
     def filter(self, data:list):
         datar = []
-        olddata = self.data[:]
         for d in data:
-            if d not in olddata:
+            if d not in  self.data:
                 datar.append(d)
                 self.data.append(d)
 
         return datar
 
     def remove(self, data:list):
-        olddata = self.data[:]
         for d in data:
-            if d in olddata:
+            if d in self.data:
                 self.data.remove(d)
 
     def __repr__(self):
