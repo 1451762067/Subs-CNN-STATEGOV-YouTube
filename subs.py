@@ -24,20 +24,17 @@ if __name__ == '__main__':
         try:
             zzh_subs_youtube.subs()
         except Exception as e:
-            logging.error("zzh_subs_youtube.subs() Exception");
-            print(e)
+            logging.error(e);print(e)
 
-        # try:
-        #     zzh_my_subs_cnn.subs()
-        # except Exception as e:
-        #     logging.error("zzh_my_subs_cnn.subs() Exception");
-        #     print(e)
-        #
-        # try:
-        #     zzh_my_subs_stategov.subs()
-        # except Exception as e:
-        #     logging.error("zzh_my_subs_stategov.subs() Exception");
-        #     print(e)
+        try:
+            zzh_my_subs_cnn.subs()
+        except Exception as e:
+            logging.error(e);print(e)
+
+        try:
+            zzh_my_subs_stategov.subs()
+        except Exception as e:
+            logging.error(e);print(e)
 
 
         print('->此次订阅结束 sleep=1800s')
