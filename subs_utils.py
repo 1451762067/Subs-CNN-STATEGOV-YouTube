@@ -107,7 +107,6 @@ class datapool():
             if d not in  self.data:
                 datar.append(d)
                 self.data.append(d)
-
         return datar
 
     def remove(self, data:list):

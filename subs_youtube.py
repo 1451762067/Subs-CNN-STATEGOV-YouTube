@@ -1,4 +1,4 @@
-import json, re, sys, uuid, requests, youtube_dl, logging, time
+import json, re, sys, uuid, requests, youtube_dl, logging,time
 from subs_utils import getconfig, sendmail, deleltefiles, datapool
 requests.packages.urllib3.disable_warnings()
 
@@ -18,8 +18,10 @@ def urltomp3(urls:list):
     fails = []
     for url in urls:
         print('->下载 ', url[0])
-        filename = str(uuid.uuid4())[0:8]   #经充分测试，如果保留原视频title明，那下载下来的文件名可能包含特殊字符，有可能导致邮件附件发送失败
-        ydl_opts = {                        #替换掉特殊字符也一样，原因未知，因此通过生成uid做文件名
+        # 经充分测试，如果保留原视频title明，那下载下来的文件名可能包含特殊字符，有可能导致邮件附件发送失败
+        # 替换掉特殊字符也一样，原因未知，因此通过生成uid做文件名
+        filename = str(uuid.uuid4())[0:8]
+        ydl_opts = {
             'format': 'worstaudio/worst',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
@@ -38,9 +40,8 @@ def urltomp3(urls:list):
         else:
             files.append([url[0], url[1], filename + '.mp3'])
 
-        #增加间隔时间，防止过频访问
-        time.sleep(10)  
-        
+        time.sleep(10)  #增加间隔时间，防止过频访问
+
     return files, fails
 
 '''
@@ -66,6 +67,7 @@ def geturls(urls:list):
             continue
 
         if resp.ok:
+            print('ok')
             res = re.findall(r'(\{\"responseContext\".+?\}\]\}\}\});</script>', resp.text)
             videos =  json.loads(res[0])['contents']['twoColumnBrowseResultsRenderer']['tabs'][1]['tabRenderer']\
                                         ['content']['sectionListRenderer']['contents'][0]['itemSectionRenderer']\
@@ -84,7 +86,9 @@ class subs_youtube():
         self.urlp = datapool(jsonfile)
         self.urlp.load()
         self.cfgfile = cfgfile
-        self.startup = False
+
+        #首次启动为防止一次发送所有订阅，配置为首次订阅不发送
+        self.startup = True
 
     def subs(self):
         config = getconfig(self.cfgfile)
@@ -93,7 +97,8 @@ class subs_youtube():
         if len(urls) > 0 and (self.startup == False):
             files, fails = urltomp3(urls)
             self.urlp.remove(fails)
-            for file in files:   #为防止附件过大，mp3邮件单个发送  file=[tilte, link, videoname]
+            for file in files:
+                # 为防止附件过大，mp3邮件单个发送  file=[tilte, link, videoname]
                 content = '【1】'+ file[0] + ' ' + file[1] + '\n'
                 sendmail('YouTube订阅！', [file[2]], config, content)
                 deleltefiles([file[2]])
@@ -105,9 +110,6 @@ class subs_youtube():
 if __name__ == '__main__':
     zzh_subs_youtube = subs_youtube('subs_youtube.config', 'subs_youtube.json')
     zzh_subs_youtube.subs()
-
-
-   
 
 
 
