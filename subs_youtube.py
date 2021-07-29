@@ -69,14 +69,16 @@ def geturls(urls:list):
         if resp.ok:
             print('ok')
             res = re.findall(r'(\{\"responseContext\".+?\}\]\}\}\});</script>', resp.text)
-            videos =  json.loads(res[0])['contents']['twoColumnBrowseResultsRenderer']['tabs'][1]['tabRenderer']\
-                                        ['content']['sectionListRenderer']['contents'][0]['itemSectionRenderer']\
-                                        ['contents'][0]['gridRenderer']['items']
+            videos =  json.loads(res[0])['contents']['twoColumnBrowseResultsRenderer']\
+                                        ['tabs'][1]['tabRenderer']['content']\
+                                        ['sectionListRenderer']['contents'][0]\
+                                        ['itemSectionRenderer']['contents'][0]\
+                                        ['gridRenderer']['items']
             for v in videos:
                 if 'gridVideoRenderer' in v.keys():
-                    tup= [v['gridVideoRenderer']['title']['runs'][0]['text'],
-                          'https://www.youtube.com/watch?v='+ v['gridVideoRenderer']['videoId']]
-                    returls.append(tup)
+                    vtitle = v['gridVideoRenderer']['title']['runs'][0]['text']
+                    vurl ='https://www.youtube.com/watch?v='+ v['gridVideoRenderer']['videoId']
+                    returls.append([vtitle, vurl])
                     # print(tup)
     req.close()
     return returls
